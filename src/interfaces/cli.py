@@ -35,7 +35,7 @@ console = Console()
 
 BANNER = """
 +----------------------------------------------------------------+
-|                         AGENTE S                               |
+|                         CKRAFTER                               |
 |          Tu equipo de desarrollo, listo para ayudar            |
 +----------------------------------------------------------------+
 |  Planifica  |  Diseña  |  Comprueba  |  Prepara  |  Explica   |
@@ -317,7 +317,7 @@ def _pipeline_board(session: dict, started_at: float) -> Panel:
     )
     return Panel(
         content,
-        title="[bold cyan] AGENTE S [/bold cyan]",
+        title="[bold cyan] CKRAFTER [/bold cyan]",
         border_style="cyan",
         box=box.ROUNDED,
         padding=(1, 3),

@@ -161,6 +161,7 @@ class WebAppHttpTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn(b"Ckrafter", body)
         self.assertNotIn(b"Agente S", body)
+        self.assertNotIn(b"AGENTE S", body)
         response_headers = dict(headers)
         self.assertTrue(response_headers["Server"].startswith("Ckrafter"))
         self.assertIn("default-src 'self'", response_headers["Content-Security-Policy"])
