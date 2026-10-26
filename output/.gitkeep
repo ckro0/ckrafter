@@ -1,0 +1,4 @@
+# Archivos generados por los agentes
+# Este directorio se crea automáticamente al ejecutar main.py
+*.md
+crew_log.txt

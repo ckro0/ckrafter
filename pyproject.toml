@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ckrafter"
+version = "0.1.0"
+description = "Asistente local con agentes de IA para planificar proyectos de software y generar entregables técnicos"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "openai-agents>=0.17.0",
+  "python-dotenv>=1.0.0",
+  "pydantic>=2.6.0",
+  "rich>=13.7.0",
+]
+
+[project.scripts]
+ckrafter = "src.interfaces.cli:main"
+ckrafter-web = "src.interfaces.web:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["src", "src.*"]
+
+[tool.setuptools.package-data]
+"src.interfaces" = ["web_static/*.html", "web_static/*.css", "web_static/*.js"]

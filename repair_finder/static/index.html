@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Busca guias, manuales y recursos para reparar tus dispositivos."
+    />
+    <meta name="theme-color" content="#f5f5f2" />
+    <title>FixFinder — recursos para reparar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="FixFinder, inicio">
+        <span class="brand-mark" aria-hidden="true">f.</span>
+        <span>fixfinder<span class="brand-period">.</span></span>
+      </a>
+      <nav class="top-nav" aria-label="Navegacion principal">
+        <a href="#resultados">Explorar recursos</a>
+        <a href="#como-funciona">Como funciona</a>
+      </nav>
+      <span class="status-pill"><span></span> Busqueda gratuita</span>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span>01</span> TU TALLER, EN UN SOLO LUGAR</p>
+          <h1 id="hero-title">Todo lo que necesitas<br />para <span>repararlo.</span></h1>
+          <p class="hero-description">
+            Busca tu dispositivo y encuentra guias paso a paso, manuales y recursos
+            de reparacion en un solo lugar.
+          </p>
+        </div>
+
+        <form class="search-form" id="search-form">
+          <label for="device-query">¿Que dispositivo quieres reparar?</label>
+          <div class="search-control">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-4-4"></path>
+            </svg>
+            <input
+              id="device-query"
+              name="q"
+              type="search"
+              maxlength="120"
+              placeholder="Ej. MacBook Pro 2020, iPhone 13..."
+              autocomplete="off"
+              required
+            />
+            <button type="submit" id="search-button">Buscar recursos <span>→</span></button>
+          </div>
+          <p class="search-hint">Empieza con la marca y modelo. No necesitas registrarte.</p>
+        </form>
+
+        <div class="popular-searches" aria-label="Busquedas de ejemplo">
+          <span>Prueba:</span>
+          <button type="button" data-query="iPhone 13 screen replacement">iPhone 13</button>
+          <button type="button" data-query="MacBook Pro 2020 battery">MacBook Pro</button>
+          <button type="button" data-query="Samsung Galaxy S22 screen">Galaxy S22</button>
+        </div>
+
+        <div class="hero-decoration" aria-hidden="true">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="orbit-center"><span>+</span></div>
+          <span class="decoration-label">REPAIR<br />NOT REPLACE</span>
+        </div>
+      </section>
+
+      <section class="results-section" id="resultados" aria-labelledby="results-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow"><span>02</span> BIBLIOTECA DE REPARACION</p>
+            <h2 id="results-title">Recursos para tu busqueda</h2>
+          </div>
+          <p class="results-count" id="results-count" aria-live="polite">Esperando una busqueda</p>
+        </div>
+
+        <div class="results-layout">
+          <aside class="filter-panel" aria-label="Filtros de resultados">
+            <div class="filter-title">
+              <h3>Filtrar resultados</h3>
+              <span aria-hidden="true">⌘</span>
+            </div>
+            <label for="kind-filter">Tipo de recurso</label>
+            <select id="kind-filter" disabled>
+              <option value="all">Todos los recursos</option>
+            </select>
+            <label for="language-filter">Idioma</label>
+            <select id="language-filter" disabled>
+              <option value="all">Cualquier idioma</option>
+            </select>
+            <label for="sort-filter">Ordenar por</label>
+            <select id="sort-filter" disabled>
+              <option value="relevance">Mas relevantes</option>
+              <option value="recent">Mas recientes</option>
+              <option value="title">Nombre A–Z</option>
+            </select>
+            <div class="filter-note">
+              <span class="note-icon">i</span>
+              <p>Los recursos se consultan en iFixit. El contenido y sus derechos pertenecen a sus autores.</p>
+            </div>
+          </aside>
+
+          <div class="results-content">
+            <div class="quick-links" id="quick-links" hidden>
+              <span>Amplia la busqueda</span>
+              <div id="external-searches"></div>
+            </div>
+            <div class="message-state" id="message-state">
+              <div class="empty-illustration" aria-hidden="true">
+                <span class="tool-handle"></span>
+                <span class="tool-head"></span>
+                <span class="tool-spark spark-one">✳</span>
+                <span class="tool-spark spark-two">✳</span>
+              </div>
+              <h3>Tu proxima reparacion empieza aqui.</h3>
+              <p>Escribe el nombre de un dispositivo para encontrar guias y recursos utiles.</p>
+            </div>
+            <div class="resource-grid" id="resource-grid" aria-live="polite"></div>
+            <nav class="pagination" id="pagination" aria-label="Paginas de resultados" hidden>
+              <button id="previous-page" type="button">← Anterior</button>
+              <span id="page-label"></span>
+              <button id="next-page" type="button">Siguiente →</button>
+            </nav>
+          </div>
+        </div>
+      </section>
+
+      <section class="how-section" id="como-funciona">
+        <div>
+          <p class="eyebrow"><span>03</span> MENOS BUSQUEDA. MAS REPARACION.</p>
+          <h2>Una busqueda.<br /><span>Mejores soluciones.</span></h2>
+        </div>
+        <div class="how-steps">
+          <article><span>01</span><h3>Identifica</h3><p>Escribe marca y modelo para afinar los resultados.</p></article>
+          <article><span>02</span><h3>Compara</h3><p>Filtra por tipo de recurso, idioma o fecha.</p></article>
+          <article><span>03</span><h3>Repara</h3><p>Abre la guia original y sigue las indicaciones de su autor.</p></article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">f.</span><span>fixfinder<span class="brand-period">.</span></span></a>
+      <p>Una herramienta independiente para encontrar conocimiento de reparacion.</p>
+      <span>Los recursos enlazados pertenecen a sus respectivos autores.</span>
+    </footer>
+  </body>
+</html>

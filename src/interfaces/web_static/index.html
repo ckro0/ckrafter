@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#111b1a" />
+    <meta
+      name="description"
+      content="Convierte una idea en un proyecto con un equipo de especialistas IA."
+    />
+    <title>Ckrafter — tu equipo de proyecto</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="Ckrafter, inicio">
+          <span class="brand-symbol" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Ckrafter</span>
+        </a>
+
+        <div class="workspace-switcher">
+          <span class="workspace-avatar">C</span>
+          <span class="workspace-copy"><strong>Espacio personal</strong><small>Proyectos locales</small></span>
+          <span class="switcher-dots" aria-hidden="true">•••</span>
+        </div>
+
+        <p class="nav-label">ESPACIO DE TRABAJO</p>
+        <nav class="main-nav" aria-label="Navegación principal">
+          <a class="nav-item is-active" href="#inicio"><span class="nav-icon">⌂</span> Inicio</a>
+          <a class="nav-item" href="#equipo"><span class="nav-icon">⌘</span> Equipo y avance</a>
+          <a class="nav-item" href="#entregables"><span class="nav-icon">▤</span> Entregables</a>
+        </nav>
+
+        <div class="sidebar-projects">
+          <div class="sidebar-section-heading">
+            <p class="nav-label">TUS PROYECTOS</p>
+            <button id="sidebar-new-project" class="icon-button" type="button" aria-label="Nuevo proyecto">+</button>
+          </div>
+          <div id="project-list" class="project-list">
+            <p class="sidebar-empty">Tus proyectos aparecerán aquí.</p>
+          </div>
+        </div>
+
+        <div class="sidebar-bottom">
+          <div class="local-badge"><span class="pulse-dot"></span> Solo en este equipo</div>
+          <button id="open-settings" class="settings-link" type="button">
+            <span class="nav-icon">⚙</span> Configuración
+            <span id="settings-indicator" class="settings-indicator" aria-label="Configuración pendiente"></span>
+          </button>
+          <p class="sidebar-footnote">Tus claves y proyectos se guardan localmente.</p>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Espacio personal</span><span class="crumb-separator">/</span><strong id="breadcrumb-current">Inicio</strong></div>
+          <div class="topbar-actions">
+            <span class="local-status"><span class="pulse-dot"></span> Aplicación local</span>
+            <button id="top-settings" class="avatar-button" type="button" aria-label="Abrir configuración">C</button>
+          </div>
+        </header>
+
+        <section id="welcome-view" class="view">
+          <div class="welcome-grid">
+            <div class="welcome-copy">
+              <div class="eyebrow"><span class="eyebrow-line"></span> TU IDEA, EN BUENAS MANOS</div>
+              <h1>Las buenas ideas<br />merecen <span>un gran equipo.</span></h1>
+              <p class="welcome-description">
+                Cuéntanos qué tienes en mente. Un equipo de especialistas preparará el plan,
+                el código y los siguientes pasos contigo.
+              </p>
+              <div class="trust-row">
+                <span class="trust-icon">⌂</span>
+                <span><strong>Control local, proveedor a elección</strong><small>Tus archivos se guardan aquí; los prompts van al proveedor que elijas.</small></span>
+              </div>
+            </div>
+
+            <div class="hero-visual" aria-hidden="true">
+              <div class="hero-orbit orbit-a"></div>
+              <div class="hero-orbit orbit-b"></div>
+              <div class="hero-orbit orbit-c"></div>
+              <div class="hero-core">
+                <span class="core-star">✳</span>
+                <span class="core-label">IDEA</span>
+              </div>
+              <span class="orbit-node node-plan">PLAN</span>
+              <span class="orbit-node node-build">BUILD</span>
+              <span class="orbit-node node-check">QA</span>
+              <span class="orbit-caption">UNA IDEA · MUCHAS PERSPECTIVAS</span>
+            </div>
+          </div>
+
+          <div id="home-job-notice" class="home-job-notice" hidden>
+            <span class="pulse-dot"></span>
+            <span id="home-job-message">El equipo sigue trabajando en tu proyecto.</span>
+            <button id="return-active-project" type="button">Ver avance ↗</button>
+          </div>
+
+          <section class="composer-card" aria-labelledby="composer-title">
+            <div class="composer-heading">
+              <div class="composer-step">01</div>
+              <div><h2 id="composer-title">¿Qué te gustaría crear?</h2><p>Empieza con una descripción sencilla. La afinamos juntos.</p></div>
+            </div>
+            <form id="project-form">
+              <label class="visually-hidden" for="requirement">Describe el proyecto que quieres crear</label>
+              <textarea id="requirement" name="requirement" maxlength="5000" rows="3" placeholder="Ej. Una app móvil para organizar gastos compartidos con mis amigos. Quiero que funcione en Android y que el backend use Java." required></textarea>
+              <div class="composer-footer">
+                <span id="character-count">0 / 5000</span>
+                <div class="composer-actions">
+                  <label for="language" class="visually-hidden">Idioma</label>
+                  <select id="language" name="language" aria-label="Idioma de los documentos">
+                    <option value="espanol">Documentos en español</option>
+                    <option value="english">Documents in English</option>
+                  </select>
+                  <button id="start-project" class="button button-primary" type="submit">
+                    <span>Preparar mi proyecto</span><span class="button-arrow" aria-hidden="true">↗</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+            <div class="example-prompts">
+              <span>¿No sabes por dónde empezar?</span>
+              <button type="button" data-example="Una aplicación Android para organizar mis finanzas personales, con gráficos claros y sincronización segura.">App para mis finanzas</button>
+              <button type="button" data-example="Una tienda online sencilla para vender productos hechos a mano, con catálogo, carrito y pagos.">Tienda online</button>
+              <button type="button" data-example="Una API en Java para gestionar reservas de un pequeño hotel, con usuarios y disponibilidad de habitaciones.">API con Java</button>
+            </div>
+            <p id="composer-error" class="inline-error" role="alert" hidden></p>
+          </section>
+
+          <div class="principles-row">
+            <div><span class="principle-number">01</span><strong>Elige la tecnología</strong><p>Java, Python, Kotlin, Go… la que mejor encaje con tu idea.</p></div>
+            <div><span class="principle-number">02</span><strong>Mira cómo avanza</strong><p>Sigue cada etapa con un diagrama vivo, sin jerga innecesaria.</p></div>
+            <div><span class="principle-number">03</span><strong>Decide el siguiente paso</strong><p>Haz clic en una parte para preparar una revisión enfocada.</p></div>
+          </div>
+
+          <section id="recent-section" class="recent-section" hidden>
+            <div class="section-title-row"><div><span class="section-kicker">TU ESPACIO</span><h2>Retoma una idea</h2></div><span id="project-count" class="subtle-count"></span></div>
+            <div id="recent-projects" class="recent-grid"></div>
+          </section>
+        </section>
+
+        <section id="project-view" class="view" hidden>
+          <div class="project-heading">
+            <button id="back-home" class="back-link" type="button"><span>←</span> Todos los proyectos</button>
+            <div class="project-heading-main">
+              <div>
+                <div class="eyebrow"><span class="eyebrow-line"></span> ESPACIO DEL PROYECTO</div>
+                <h1 id="project-title">Tu proyecto</h1>
+                <p id="project-requirement" class="project-requirement"></p>
+              </div>
+              <button id="continue-project" class="button button-secondary" type="button" hidden><span>Continuar proyecto</span><span aria-hidden="true">↗</span></button>
+            </div>
+          </div>
+
+          <div id="job-banner" class="job-banner" hidden>
+            <div class="globe-loader" aria-label="Animación ASCII de un planeta girando">
+              <pre id="globe-frame" aria-hidden="true"></pre>
+              <span>EN MOVIMIENTO</span>
+            </div>
+            <div class="job-copy"><strong id="job-title">El equipo está trabajando</strong><p id="job-message">Tu avance se guarda automáticamente.</p></div>
+            <span id="job-time" class="job-time"></span>
+          </div>
+          <div id="project-error" class="project-error" role="alert" hidden></div>
+
+          <section id="team-section" class="panel-section">
+            <div class="section-title-row">
+              <div><span class="section-kicker">EL MAPA DEL EQUIPO</span><h2>De la idea al proyecto</h2></div>
+              <div id="progress-chip" class="progress-chip"><span class="pulse-dot"></span><span id="progress-label">Esperando al equipo</span></div>
+            </div>
+
+            <div class="workflow-panel">
+              <div class="workflow-topline">
+                <div class="workflow-legend"><span><i class="legend-dot legend-done"></i> Completado</span><span><i class="legend-dot legend-active"></i> En marcha</span><span><i class="legend-dot legend-waiting"></i> Por empezar</span></div>
+                <span class="workflow-hint">Selecciona una etapa para enfocarla</span>
+              </div>
+              <div id="workflow" class="workflow" aria-label="Diagrama interactivo del proceso"></div>
+              <div class="workflow-foot">
+                <span><span class="parallel-mark">↗</span> Construcción e interfaz avanzan en paralelo.</span>
+                <span id="workflow-summary">Los documentos aparecerán al completar cada etapa.</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="focus-panel">
+            <div class="focus-icon">✳</div>
+            <div class="focus-copy">
+              <span class="section-kicker">TU SIGUIENTE MOVIMIENTO</span>
+              <h2 id="focus-title">Pon el foco donde más importa.</h2>
+              <p id="focus-description">Selecciona una etapa del diagrama para preparar una revisión con su contexto ya incluido.</p>
+            </div>
+            <textarea id="review-context" class="review-context" maxlength="1000" aria-label="Contexto de la revisión" placeholder="Selecciona una etapa para preparar el contexto." disabled></textarea>
+            <div class="focus-action">
+              <button id="review-button" class="button button-dark" type="button" disabled>Revisar esta área <span aria-hidden="true">↗</span></button>
+            </div>
+          </section>
+
+          <section id="deliverables-section" class="panel-section">
+            <div class="section-title-row">
+              <div><span class="section-kicker">LO QUE VA TOMANDO FORMA</span><h2>Entregables</h2></div>
+              <span id="deliverables-count" class="subtle-count">0 disponibles</span>
+            </div>
+            <div id="deliverables" class="deliverables-grid"></div>
+          </section>
+        </section>
+
+        <footer class="page-footer"><span>AGENTE S</span><span>App local · los prompts se envían al proveedor seleccionado</span></footer>
+      </main>
+    </div>
+
+    <div id="settings-modal" class="modal-backdrop" hidden>
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <button id="close-settings" class="modal-close" type="button" aria-label="Cerrar configuración">×</button>
+        <div class="modal-mark">S</div>
+        <span class="section-kicker">UN ÚLTIMO DETALLE</span>
+        <h2 id="settings-title">Conecta a tu proveedor de IA.</h2>
+        <p class="modal-description">La clave se guarda en un archivo local y se usa con el proveedor que elijas. Nunca vuelve a mostrarse en esta página.</p>
+        <form id="settings-form">
+          <label for="provider">Proveedor</label>
+          <select id="provider" name="provider">
+            <option value="groq">Groq</option>
+            <option value="openai">OpenAI</option>
+            <option value="ollama">Ollama · en tu equipo</option>
+          </select>
+          <label for="api-key">Clave de API <span id="key-optional"></span></label>
+          <input id="api-key" name="api_key" type="password" autocomplete="new-password" placeholder="Pega tu clave aquí" />
+          <p id="key-status" class="key-status"></p>
+          <button id="save-settings" class="button button-primary button-wide" type="submit">Guardar configuración <span aria-hidden="true">↗</span></button>
+          <p id="settings-error" class="inline-error" role="alert" hidden></p>
+        </form>
+        <p class="modal-footnote">¿Necesitas una clave? <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Consulta las opciones de Groq ↗</a></p>
+      </section>
+    </div>
+
+    <div id="document-modal" class="modal-backdrop" hidden>
+      <section class="document-modal modal-card" role="dialog" aria-modal="true" aria-labelledby="document-title">
+        <button id="close-document" class="modal-close" type="button" aria-label="Cerrar documento">×</button>
+        <span class="section-kicker">DOCUMENTO DEL PROYECTO</span>
+        <h2 id="document-title">Entregable</h2>
+        <pre id="document-content" class="document-content"></pre>
+      </section>
+    </div>
+    <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
+  </body>
+</html>

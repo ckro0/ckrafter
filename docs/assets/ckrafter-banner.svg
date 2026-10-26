@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" fill="none">
+  <defs>
+    <linearGradient id="background" x1="60" y1="20" x2="1140" y2="350" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14201C"/>
+      <stop offset="1" stop-color="#263A30"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="186" y1="90" x2="398" y2="284" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D7F5AD"/>
+      <stop offset="1" stop-color="#8BCB66"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(0 224 -270 0 1021 66)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9BD67A" stop-opacity=".23"/>
+      <stop offset="1" stop-color="#9BD67A" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M36 0H0V36" stroke="#DDF3D2" stroke-opacity=".055"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="360" rx="28" fill="url(#background)"/>
+  <rect width="1200" height="360" rx="28" fill="url(#glow)"/>
+  <rect width="1200" height="360" rx="28" fill="url(#grid)"/>
+  <circle cx="976" cy="180" r="137" stroke="#D6F0C7" stroke-opacity=".18"/>
+  <ellipse cx="976" cy="180" rx="185" ry="82" transform="rotate(-27 976 180)" stroke="#D6F0C7" stroke-opacity=".24" stroke-dasharray="5 9"/>
+  <ellipse cx="976" cy="180" rx="184" ry="82" transform="rotate(31 976 180)" stroke="#D6F0C7" stroke-opacity=".13"/>
+  <circle cx="976" cy="180" r="84" fill="#D9F2C7" fill-opacity=".08"/>
+  <circle cx="976" cy="180" r="62" fill="#D9F2C7" fill-opacity=".09" stroke="#D9F2C7" stroke-opacity=".36"/>
+  <path d="M956 155c0-12 9-20 22-20 11 0 20 7 20 18 0 9-5 14-15 20-8 5-12 9-12 17v4" stroke="url(#accent)" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="971" cy="211" r="5" fill="#D7F5AD"/>
+  <circle cx="794" cy="151" r="7" fill="#D7F5AD"/>
+  <circle cx="1136" cy="220" r="7" fill="#D7F5AD"/>
+  <circle cx="1037" cy="48" r="5" fill="#D7F5AD"/>
+  <rect x="102" y="94" width="50" height="50" rx="15" fill="#D7F5AD" fill-opacity=".12" stroke="#D7F5AD" stroke-opacity=".5"/>
+  <path d="M117 108v22m20-22v22m-10-22v22" stroke="#D7F5AD" stroke-width="3" stroke-linecap="round"/>
+  <text x="176" y="126" fill="#B6D39F" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="4">EQUIPO DE DESARROLLO MULTI-AGENTE</text>
+  <text x="98" y="207" fill="#F5F7F2" font-family="Segoe UI, Arial, sans-serif" font-size="58" font-weight="700" letter-spacing="-2">Ckrafter</text>
+  <text x="98" y="273" fill="url(#accent)" font-family="Segoe UI, Arial, sans-serif" font-size="58" font-weight="700" letter-spacing="-2">a un proyecto mejor definido.</text>
+  <text x="102" y="318" fill="#C1CBC2" font-family="Segoe UI, Arial, sans-serif" font-size="17">Plan · código de referencia · pruebas · seguridad · próximos pasos</text>
+</svg>
