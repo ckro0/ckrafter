@@ -64,6 +64,8 @@ const state = {
   activeJob: null,
   selectedStep: null,
   pollToken: 0,
+  analysisSessionId: null,
+  loadedAnalysisSessionId: null,
 };
 const GLOBE_FRAMES = [
   [
@@ -118,6 +120,10 @@ const els = {
   homeJobMessage: $("#home-job-message"),
   projectForm: $("#project-form"),
   requirement: $("#requirement"),
+  existingProjectForm: $("#existing-project-form"),
+  existingProjectFolder: $("#existing-project-folder"),
+  existingProjectSubmit: $("#existing-project-submit"),
+  existingProjectError: $("#existing-project-error"),
   language: $("#language"),
   startProject: $("#start-project"),
   characterCount: $("#character-count"),
@@ -142,6 +148,13 @@ const els = {
   jobMessage: $("#job-message"),
   jobTime: $("#job-time"),
   projectError: $("#project-error"),
+  externalProjectSection: $("#external-project-section"),
+  externalAnalysis: $("#external-analysis"),
+  externalAnalysisError: $("#external-analysis-error"),
+  externalMessages: $("#external-messages"),
+  externalQuestionForm: $("#external-question-form"),
+  externalQuestion: $("#external-question"),
+  externalQuestionSubmit: $("#external-question-submit"),
   workflow: $("#workflow"),
   progressLabel: $("#progress-label"),
   progressChip: $("#progress-chip"),
@@ -160,6 +173,58 @@ const els = {
 
 function escapeText(value) {
   return String(value ?? "");
+}
+
+async function startExistingProject(event) {
+  event.preventDefault();
+  if (state.activeJob) {
+    showToast("Espera a que termine el proceso actual antes de abrir otro proyecto.");
+    return;
+  }
+  if (!state.settings?.configured) {
+    openSettings();
+    return;
+  }
+  const folder = els.existingProjectFolder.value.trim();
+  if (!folder) {
+    setError(els.existingProjectError, "Indica la ruta de la carpeta que quieres analizar.");
+    els.existingProjectFolder.focus();
+    return;
+  }
+  setError(els.existingProjectError, "");
+  els.existingProjectSubmit.disabled = true;
+  els.existingProjectSubmit.innerHTML = '<span>Abriendo el proyecto…</span><span class="button-arrow">↗</span>';
+  try {
+    await startJob("/api/external-projects", {
+      folder,
+      language: els.language.value,
+    }, "analysis", els.existingProjectError);
+  } finally {
+    els.existingProjectSubmit.disabled = false;
+    els.existingProjectSubmit.innerHTML = '<span>Abrir y analizar</span><span class="button-arrow">↗</span>';
+  }
+}
+
+async function askExternalProject(event) {
+  event.preventDefault();
+  if (!state.activeSession?.is_external || state.activeJob) return;
+  const question = els.externalQuestion.value.trim();
+  if (question.length < 2) {
+    showToast("Escribe qué quieres hacer con el proyecto.", true);
+    els.externalQuestion.focus();
+    return;
+  }
+  els.externalQuestionSubmit.disabled = true;
+  try {
+    const started = await startJob(
+      `/api/sessions/${encodeURIComponent(state.activeSession.id)}/ask`,
+      { question },
+      "ask",
+    );
+    if (started) els.externalQuestion.disabled = true;
+  } finally {
+    els.externalQuestionSubmit.disabled = false;
+  }
 }
 
 async function api(path, options = {}) {
@@ -299,7 +364,9 @@ function renderProjects() {
     icon.textContent = "◈";
     const progress = document.createElement("span");
     progress.className = "recent-progress";
-    progress.textContent = `${completionCount(session)}/${totalCount(session)} etapas`;
+    progress.textContent = session.is_external
+      ? session.analysis_ready ? "Proyecto analizado" : "Lectura inicial"
+      : `${completionCount(session)}/${totalCount(session)} etapas`;
     top.append(icon, progress);
     const title = document.createElement("strong");
     title.textContent = projectTitle(session.requirement);
@@ -309,7 +376,9 @@ function renderProjects() {
     const bar = document.createElement("span");
     bar.className = "recent-bar";
     const fill = document.createElement("i");
-    const progressBand = Math.round((completionCount(session) / totalCount(session)) * 10) * 10;
+    const progressBand = session.is_external
+      ? session.analysis_ready ? 100 : 0
+      : Math.round((completionCount(session) / totalCount(session)) * 10) * 10;
     fill.classList.add(`progress-${progressBand}`);
     bar.append(fill);
     card.append(top, title, date, bar);
@@ -464,8 +533,39 @@ function renderProject(session) {
   $("#breadcrumb-current").textContent = projectTitle(session.requirement);
   els.projectTitle.textContent = projectTitle(session.requirement);
   els.projectRequirement.textContent = session.requirement;
-  els.continueProject.hidden = isComplete(session) || session.is_external;
+  const isExternal = session.is_external;
+  els.continueProject.hidden = isComplete(session) || isExternal;
   els.continueProject.disabled = Boolean(state.activeJob);
+  els.externalProjectSection.hidden = !isExternal;
+  $("#team-section").hidden = isExternal;
+  $(".focus-panel").hidden = isExternal;
+  $("#deliverables-section").hidden = isExternal;
+  if (isExternal) {
+    renderExternalMessages(session);
+    if (state.analysisSessionId !== session.id) {
+      state.analysisSessionId = session.id;
+      state.loadedAnalysisSessionId = null;
+      els.externalAnalysis.textContent = "Preparando una lectura del README, manifiestos y estructura del proyecto…";
+      setError(els.externalAnalysisError, "");
+    }
+    els.externalQuestionSubmit.disabled = Boolean(state.activeJob) || !session.analysis_ready;
+    els.externalQuestion.disabled = Boolean(state.activeJob) || !session.analysis_ready;
+    if (session.analysis_ready && state.loadedAnalysisSessionId !== session.id) {
+      state.loadedAnalysisSessionId = session.id;
+      els.externalAnalysis.textContent = "Cargando el análisis inicial…";
+      api(`/api/sessions/${encodeURIComponent(session.id)}/files/00_project_analysis.md`)
+        .then((payload) => {
+          if (state.activeSession?.id === session.id) {
+            els.externalAnalysis.textContent = payload.content;
+            setError(els.externalAnalysisError, "");
+          }
+        })
+        .catch((error) => setError(els.externalAnalysisError, error.message));
+    }
+  } else {
+    state.analysisSessionId = null;
+    state.loadedAnalysisSessionId = null;
+  }
   const hasDocuments = session.files?.some((file) => file.available);
   els.reviewButton.disabled = !state.settings?.configured || Boolean(state.activeJob) || !state.selectedStep || !hasDocuments;
   renderWorkflow(session);
@@ -476,6 +576,17 @@ function renderProject(session) {
     setError(els.projectError, "");
   }
   renderProjects();
+}
+
+function renderExternalMessages(session) {
+  els.externalMessages.replaceChildren();
+  for (const message of session.conversation || []) {
+    const bubble = document.createElement("div");
+    bubble.className = `external-message${message.role === "user" ? " is-user" : ""}`;
+    bubble.textContent = message.content;
+    els.externalMessages.append(bubble);
+  }
+  els.externalMessages.scrollTop = els.externalMessages.scrollHeight;
 }
 
 async function selectProject(sessionId) {
@@ -503,7 +614,13 @@ function showHome() {
   els.jobBanner.hidden = true;
   els.homeJobNotice.hidden = !state.activeJob;
   if (state.activeJob) {
-    const title = state.activeJob.kind === "review" ? "una revisión enfocada" : "tu proyecto";
+    const title = state.activeJob.kind === "review"
+      ? "una revisión enfocada"
+      : state.activeJob.kind === "analysis"
+        ? "la lectura inicial de tu proyecto"
+        : state.activeJob.kind === "ask"
+          ? "tu consulta del proyecto"
+          : "tu proyecto";
     els.homeJobMessage.textContent = `El equipo sigue trabajando en ${title}. Tu avance se guarda automáticamente.`;
   }
   setError(els.projectError, "");
@@ -569,6 +686,10 @@ function setJobBanner(job) {
     ? "El equipo necesita que lo intentemos de nuevo"
     : isReview
       ? "El equipo está revisando el área que elegiste"
+      : job.kind === "analysis"
+        ? "Ckrafter está leyendo tu proyecto"
+        : job.kind === "ask"
+          ? "Ckrafter está preparando una respuesta con contexto"
       : "El equipo está dando forma a tu proyecto";
   els.jobMessage.textContent = job.status === "failed"
     ? job.message || "El avance anterior se conserva."
@@ -607,17 +728,29 @@ async function pollJob(jobId, token) {
         if (isCurrentProject) {
           setJobBanner(job);
           if (job.status === "completed") {
-            els.jobTitle.textContent = job.kind === "review" ? "La revisión enfocada está lista" : "El proyecto ya tomó forma";
+            els.jobTitle.textContent = job.kind === "review"
+              ? "La revisión enfocada está lista"
+              : job.kind === "analysis"
+                ? "Ya leí el proyecto"
+                : job.kind === "ask"
+                  ? "La respuesta está lista"
+                  : "El proyecto ya tomó forma";
             els.jobMessage.textContent = job.kind === "review"
               ? "Abre el entregable de revisión para ver conclusiones y siguientes pasos."
-              : "Tus documentos ya están apareciendo en el mapa del equipo.";
+              : job.kind === "analysis"
+                ? "Te compartí lo que entendí. ¿Qué quieres hacer ahora?"
+                : job.kind === "ask"
+                  ? "La conversación conserva el contexto para tu siguiente instrucción."
+                  : "Tus documentos ya están apareciendo en el mapa del equipo.";
             if (job.kind === "review") {
               const reviewFile = state.activeSession.files.find((file) => file.name === STEP_DETAILS.lead.file);
               state.selectedStep = null;
               resetFocus();
               if (reviewFile?.available) openDocument(reviewFile);
-            } else {
+            } else if (job.kind === "pipeline") {
               showToast("El equipo terminó el proyecto. Ya puedes explorar los documentos.");
+            } else if (job.kind === "ask") {
+              els.externalQuestion.value = "";
             }
           } else {
             setError(els.projectError, job.message || "El trabajo se interrumpió. El avance anterior se conserva.");
@@ -640,7 +773,7 @@ async function pollJob(jobId, token) {
   }
 }
 
-async function startJob(url, body, kind) {
+async function startJob(url, body, kind, errorTarget = null) {
   try {
     const payload = await api(url, { method: "POST", body: JSON.stringify(body) });
     const job = { ...payload.job, kind };
@@ -653,9 +786,12 @@ async function startJob(url, body, kind) {
     setJobBanner(job);
     const token = ++state.pollToken;
     pollJob(job.id, token);
+    return true;
   } catch (error) {
-    if (error.message.includes("Configura tu proveedor")) openSettings();
+    if (errorTarget) setError(errorTarget, error.message);
+    else if (error.message.includes("Configura tu proveedor")) openSettings();
     else showToast(error.message, true);
+    return false;
   }
 }
 
@@ -777,6 +913,14 @@ async function bootstrap() {
 }
 
 els.projectForm.addEventListener("submit", startProject);
+els.existingProjectForm.addEventListener("submit", startExistingProject);
+els.externalQuestionForm.addEventListener("submit", askExternalProject);
+document.querySelectorAll("[data-project-question]").forEach((button) => {
+  button.addEventListener("click", () => {
+    els.externalQuestion.value = button.dataset.projectQuestion;
+    els.externalQuestion.focus();
+  });
+});
 els.requirement.addEventListener("input", () => {
   els.characterCount.textContent = `${els.requirement.value.length} / 5000`;
   if (!els.composerError.hidden) setError(els.composerError, "");

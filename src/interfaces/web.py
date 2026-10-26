@@ -30,8 +30,10 @@ PORT = 8766
 MAX_BODY_BYTES = 16_384
 MAX_REQUIREMENT_LENGTH = 5_000
 MAX_FOCUS_LENGTH = 1_000
+MAX_PROJECT_PATH_LENGTH = 2_048
 SESSION_ID_PATTERN = re.compile(r"^\d{8}_\d{6}$")
 OUTPUT_FILES = {
+    "00_project_analysis.md": "Lectura inicial del proyecto",
     "01_plan_tecnico.md": "Plan del proyecto",
     "02_backend_code.md": "Construccion",
     "03_frontend_code.md": "Interfaz",
@@ -74,6 +76,18 @@ def _safe_session_id(value: str) -> bool:
     return SESSION_ID_PATTERN.fullmatch(value) is not None
 
 
+def _resolve_project_folder(value: object) -> Path:
+    if not isinstance(value, str) or not value.strip() or len(value) > MAX_PROJECT_PATH_LENGTH:
+        raise ValueError("Indica la ruta de la carpeta del proyecto.")
+    try:
+        folder = Path(value.strip().strip('"').strip("'")).expanduser().resolve(strict=True)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise ValueError("No encontramos una carpeta accesible en esa ruta.") from exc
+    if not folder.is_dir():
+        raise ValueError("La ruta seleccionada no es una carpeta.")
+    return folder
+
+
 def _settings() -> dict:
     provider = os.getenv("OPENAI_PROVIDER", "groq").lower()
     if provider not in PROVIDERS:
@@ -108,13 +122,42 @@ def _session_summary(session: dict) -> dict:
         "error": bool(session.get("error")),
         "files": files,
         "is_external": bool(session.get("external_folder")),
+        "analysis_ready": (output_dir / "00_project_analysis.md").is_file(),
+        "conversation": [
+            {
+                "role": message["role"],
+                "content": message["content"][-12_000:],
+            }
+            for message in session.get("conversation", [])[-40:]
+            if isinstance(message, dict)
+            and message.get("role") in {"user", "assistant"}
+            and isinstance(message.get("content"), str)
+        ],
     }
 
 
 def _run_job(job_id: str, session_id: str, kind: str, focus: str = "") -> None:
     try:
         session = load_session(session_id)
-        if kind == "review":
+        if kind == "analysis":
+            from src.crews.dev_crew import analyze_external_project
+
+            analyze_external_project(
+                session["external_folder"],
+                session["language"],
+                session=session,
+            )
+        elif kind == "ask":
+            from src.crews.dev_crew import ask_about_project
+
+            answer = ask_about_project(session, focus)
+            session.setdefault("conversation", []).extend([
+                {"role": "user", "content": focus},
+                {"role": "assistant", "content": answer},
+            ])
+            session["conversation"] = session["conversation"][-40:]
+            save_session(session)
+        elif kind == "review":
             from src.crews.dev_crew import run_lead
 
             run_lead(session, focus, quiet=True)
@@ -288,7 +331,6 @@ class WebHandler(BaseHTTPRequestHandler):
                 "sessions": [
                     _session_summary(session)
                     for session in list_sessions()
-                    if not session.get("external_folder")
                 ],
             })
         elif path == "/api/sessions":
@@ -296,7 +338,6 @@ class WebHandler(BaseHTTPRequestHandler):
                 "sessions": [
                     _session_summary(session)
                     for session in list_sessions()
-                    if not session.get("external_folder")
                 ]
             })
         elif path.startswith("/api/sessions/"):
@@ -376,8 +417,12 @@ class WebHandler(BaseHTTPRequestHandler):
             self._save_settings(payload)
         elif path == "/api/projects":
             self._create_project(payload)
+        elif path == "/api/external-projects":
+            self._create_external_project(payload)
         elif path.startswith("/api/sessions/") and path.endswith("/continue"):
             self._continue_project(path, payload)
+        elif path.startswith("/api/sessions/") and path.endswith("/ask"):
+            self._ask_external_project(path, payload)
         elif path.startswith("/api/sessions/") and path.endswith("/review"):
             self._start_review(path, payload)
         else:
@@ -429,6 +474,25 @@ class WebHandler(BaseHTTPRequestHandler):
         save_session(session)
         self._launch(session, "pipeline")
 
+    def _create_external_project(self, payload: dict) -> None:
+        try:
+            folder = _resolve_project_folder(payload.get("folder"))
+        except ValueError as exc:
+            self._error(400, str(exc))
+            return
+        language = payload.get("language", "espanol")
+        if language not in {"espanol", "english"}:
+            self._error(400, "Elige un idioma disponible.")
+            return
+        if not _settings()["configured"]:
+            self._error(409, "Configura tu proveedor antes de analizar el proyecto.")
+            return
+        session = create_session(f"Proyecto existente: {folder.name}", language)
+        session["external_folder"] = str(folder)
+        session["conversation"] = []
+        save_session(session)
+        self._launch(session, "analysis")
+
     def _continue_project(self, path: str, payload: dict) -> None:
         del payload
         session_id = path.removeprefix("/api/sessions/").removesuffix("/continue")
@@ -440,7 +504,38 @@ class WebHandler(BaseHTTPRequestHandler):
         except FileNotFoundError:
             self._error(404, "No encontramos este proyecto.")
             return
+        if session.get("external_folder"):
+            self._error(409, "Este proyecto se trabaja desde la conversación contextual.")
+            return
         self._launch(session, "pipeline")
+
+    def _ask_external_project(self, path: str, payload: dict) -> None:
+        session_id = path.removeprefix("/api/sessions/").removesuffix("/ask")
+        question = payload.get("question")
+        if not _safe_session_id(session_id):
+            self._error(400, "Identificador de proyecto no valido.")
+            return
+        if not isinstance(question, str) or not 2 <= len(question.strip()) <= MAX_REQUIREMENT_LENGTH:
+            self._error(400, "Escribe una instruccion de entre 2 y 5000 caracteres.")
+            return
+        if not _settings()["configured"]:
+            self._error(409, "Configura tu proveedor antes de continuar.")
+            return
+        try:
+            session = load_session(session_id)
+        except FileNotFoundError:
+            self._error(404, "No encontramos este proyecto.")
+            return
+        if not session.get("external_folder"):
+            self._error(409, "La conversación contextual solo está disponible para proyectos existentes.")
+            return
+        if not Path(session["output_dir"], "00_project_analysis.md").is_file():
+            self._error(409, "Espera a que termine la lectura inicial del proyecto.")
+            return
+        if not Path(session["external_folder"]).is_dir():
+            self._error(409, "La carpeta original ya no está disponible.")
+            return
+        self._launch(session, "ask", question.strip())
 
     def _start_review(self, path: str, payload: dict) -> None:
         session_id = path.removeprefix("/api/sessions/").removesuffix("/review")
@@ -462,6 +557,9 @@ class WebHandler(BaseHTTPRequestHandler):
             session = load_session(session_id)
         except FileNotFoundError:
             self._error(404, "No encontramos este proyecto.")
+            return
+        if session.get("external_folder"):
+            self._error(409, "Usa la conversación contextual para trabajar con este proyecto.")
             return
         if not any(
             Path(session["output_dir"], filename).is_file()

@@ -12,6 +12,7 @@ from src.interfaces.web import (
     LocalWebServer,
     WebHandler,
     _safe_session_id,
+    _resolve_project_folder,
     _session_summary,
     _settings,
 )
@@ -92,6 +93,7 @@ class WebAppHelpersTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)
             (output / "01_plan_tecnico.md").write_text("Plan", encoding="utf-8")
+            (output / "00_project_analysis.md").write_text("Lectura inicial", encoding="utf-8")
             summary = _session_summary({
                 "id": "20261026_112200",
                 "requirement": "Una app de ejemplo",
@@ -100,13 +102,36 @@ class WebAppHelpersTests(unittest.TestCase):
                 "steps": {"pm": "completed"},
                 "error": "internal error details",
                 "created_at": "2026-10-26T11:22:00",
+                "external_folder": "C:\\projects\\demo",
+                "conversation": [{"role": "assistant", "content": "Ya leí el proyecto."}],
             })
 
-        self.assertTrue(summary["files"][0]["available"])
-        self.assertFalse(summary["files"][1]["available"])
+        available = {item["name"]: item["available"] for item in summary["files"]}
+        self.assertTrue(available["00_project_analysis.md"])
+        self.assertTrue(available["01_plan_tecnico.md"])
+        self.assertFalse(available["02_backend_code.md"])
         self.assertTrue(summary["error"])
+        self.assertTrue(summary["is_external"])
+        self.assertTrue(summary["analysis_ready"])
+        self.assertEqual(summary["conversation"][0]["content"], "Ya leí el proyecto.")
         self.assertNotIn("output_dir", summary)
         self.assertNotIn("internal error details", json.dumps(summary))
+
+    def test_resolves_only_existing_project_directories(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary, "project")
+            folder.mkdir()
+            self.assertEqual(_resolve_project_folder(str(folder)), folder.resolve())
+            file_path = Path(temporary, "README.md")
+            file_path.touch()
+
+            with self.assertRaisesRegex(ValueError, "no es una carpeta"):
+                _resolve_project_folder(str(file_path))
+
+        with self.assertRaisesRegex(ValueError, "carpeta accesible"):
+            _resolve_project_folder("C:\\missing\\project")
+        with self.assertRaises(ValueError):
+            _resolve_project_folder(None)
 
     def test_session_ids_only_accept_the_existing_timestamp_format(self):
         self.assertTrue(_safe_session_id("20261026_112200"))
@@ -162,6 +187,8 @@ class WebAppHttpTests(unittest.TestCase):
         self.assertIn(b"Ckrafter", body)
         self.assertNotIn(b"Agente S", body)
         self.assertNotIn(b"AGENTE S", body)
+        self.assertIn(b"existing-project-form", body)
+        self.assertIn(b"external-question-form", body)
         response_headers = dict(headers)
         self.assertTrue(response_headers["Server"].startswith("Ckrafter"))
         self.assertIn("default-src 'self'", response_headers["Content-Security-Policy"])
@@ -205,6 +232,102 @@ class WebAppHttpTests(unittest.TestCase):
 
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(body)["settings"]["provider"], "ollama")
+
+    def test_existing_project_starts_an_analysis_job(self):
+        session = {
+            "id": "20261026_112200",
+            "requirement": "Proyecto existente: demo",
+            "language": "espanol",
+            "output_dir": "",
+            "steps": {},
+            "external_folder": "",
+        }
+        with tempfile.TemporaryDirectory() as folder:
+            with (
+                patch("src.interfaces.web._settings", return_value={"configured": True}),
+                patch("src.interfaces.web.create_session", return_value=session),
+                patch("src.interfaces.web.save_session"),
+                patch("src.interfaces.web._start_job", return_value={
+                    "id": "analysis-job",
+                    "session_id": session["id"],
+                    "status": "running",
+                }) as start_job,
+            ):
+                status, _, body = self.request(
+                    "POST",
+                    "/api/external-projects",
+                    {"folder": folder, "language": "espanol"},
+                )
+
+        self.assertEqual(status, 202)
+        self.assertEqual(session["external_folder"], str(Path(folder).resolve()))
+        self.assertEqual(session["conversation"], [])
+        start_job.assert_called_once_with(session, "analysis", "")
+        self.assertTrue(json.loads(body)["session"]["is_external"])
+
+    def test_external_project_rejects_invalid_folder_before_creating_session(self):
+        with (
+            patch("src.interfaces.web._settings", return_value={"configured": True}),
+            patch("src.interfaces.web.create_session") as create,
+        ):
+            status, _, body = self.request(
+                "POST",
+                "/api/external-projects",
+                {"folder": "C:\\missing\\folder", "language": "espanol"},
+            )
+
+        self.assertEqual(status, 400)
+        self.assertIn("carpeta accesible", json.loads(body)["error"])
+        create.assert_not_called()
+
+    def test_external_question_queues_a_contextual_reply(self):
+        with tempfile.TemporaryDirectory() as folder:
+            Path(folder, "00_project_analysis.md").write_text("Lectura inicial", encoding="utf-8")
+            session = {
+                "id": "20261026_112200",
+                "external_folder": folder,
+                "output_dir": folder,
+                "steps": {},
+            }
+            with (
+                patch("src.interfaces.web._settings", return_value={"configured": True}),
+                patch("src.interfaces.web.load_session", return_value=session),
+                patch("src.interfaces.web._start_job", return_value={
+                    "id": "ask-job",
+                    "session_id": session["id"],
+                    "status": "running",
+                }) as start_job,
+            ):
+                status, _, _ = self.request(
+                    "POST",
+                    "/api/sessions/20261026_112200/ask",
+                    {"question": "Encuentra los errores principales"},
+                )
+
+        self.assertEqual(status, 202)
+        start_job.assert_called_once_with(session, "ask", "Encuentra los errores principales")
+
+    def test_external_question_waits_for_the_initial_analysis(self):
+        with tempfile.TemporaryDirectory() as folder:
+            session = {
+                "id": "20261026_112200",
+                "external_folder": folder,
+                "output_dir": folder,
+            }
+            with (
+                patch("src.interfaces.web._settings", return_value={"configured": True}),
+                patch("src.interfaces.web.load_session", return_value=session),
+                patch("src.interfaces.web._start_job") as start_job,
+            ):
+                status, _, body = self.request(
+                    "POST",
+                    "/api/sessions/20261026_112200/ask",
+                    {"question": "Busca un error importante"},
+                )
+
+        self.assertEqual(status, 409)
+        self.assertIn("lectura inicial", json.loads(body)["error"])
+        start_job.assert_not_called()
 
     def test_rejects_non_json_post_body(self):
         status, _, body = self.request(

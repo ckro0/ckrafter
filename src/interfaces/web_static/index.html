@@ -129,6 +129,34 @@
             <p id="composer-error" class="inline-error" role="alert" hidden></p>
           </section>
 
+          <section class="existing-project-card" aria-labelledby="existing-project-title">
+            <div class="composer-heading">
+              <div class="composer-step">02</div>
+              <div>
+                <h2 id="existing-project-title">¿Ya tienes un proyecto?</h2>
+                <p>Lo leemos primero para entender su propósito y proponerte siguientes pasos. No modificamos sus archivos.</p>
+              </div>
+            </div>
+            <form id="existing-project-form">
+              <label for="existing-project-folder">Ruta de la carpeta del proyecto</label>
+              <div class="existing-project-actions">
+                <input
+                  id="existing-project-folder"
+                  name="folder"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Ej. C:\Users\Ana\mi-proyecto"
+                  required
+                />
+                <button id="existing-project-submit" class="button button-primary" type="submit">
+                  <span>Abrir y analizar</span><span class="button-arrow" aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <p class="existing-project-note">El análisis inicial revisa la estructura, el README y manifiestos conocidos. El contenido compartido con el modelo se envía al proveedor de IA configurado.</p>
+              <p id="existing-project-error" class="inline-error" role="alert" hidden></p>
+            </form>
+          </section>
+
           <div class="principles-row">
             <div><span class="principle-number">01</span><strong>Elige la tecnología</strong><p>Java, Python, Kotlin, Go… la que mejor encaje con tu idea.</p></div>
             <div><span class="principle-number">02</span><strong>Mira cómo avanza</strong><p>Sigue cada etapa con un diagrama vivo, sin jerga innecesaria.</p></div>
@@ -163,6 +191,35 @@
             <span id="job-time" class="job-time"></span>
           </div>
           <div id="project-error" class="project-error" role="alert" hidden></div>
+
+          <section id="external-project-section" class="external-project-section" hidden>
+            <div class="external-analysis-card">
+              <div class="section-kicker">LECTURA INICIAL DEL PROYECTO</div>
+              <h2>Ya revisé lo que hay aquí.</h2>
+              <p class="external-analysis-intro">Te cuento qué entiendo, qué conviene atender y algunas opciones para seguir. No se cambia ningún archivo sin que lo pidas.</p>
+              <pre id="external-analysis" class="external-analysis" aria-live="polite">Preparando el contexto del proyecto…</pre>
+              <p id="external-analysis-error" class="inline-error" role="alert" hidden></p>
+            </div>
+            <section class="external-chat" aria-labelledby="external-chat-title">
+              <div class="section-title-row">
+                <div><span class="section-kicker">A PARTIR DE AQUÍ, TÚ DECIDES</span><h2 id="external-chat-title">¿Qué hacemos?</h2></div>
+              </div>
+              <div class="external-suggestions" aria-label="Siguientes pasos sugeridos">
+                <button type="button" data-project-question="Busca los errores o fallos más importantes y ordénalos por prioridad.">Buscar errores prioritarios</button>
+                <button type="button" data-project-question="Explícame cómo ejecutar y probar este proyecto en mi equipo.">Entender cómo ejecutarlo</button>
+                <button type="button" data-project-question="Sugiere el siguiente paso lógico según el estado actual, sin modificar archivos.">Elegir el siguiente paso</button>
+              </div>
+              <div id="external-messages" class="external-messages" role="log" aria-live="polite"></div>
+              <form id="external-question-form" class="external-question-form">
+                <label class="visually-hidden" for="external-question">Escribe qué quieres hacer con el proyecto</label>
+                <textarea id="external-question" maxlength="5000" rows="3" placeholder="Dime qué quieres revisar, corregir o entender…"></textarea>
+                <div class="external-question-footer">
+                  <span>El agente espera tu instrucción antes de actuar.</span>
+                  <button id="external-question-submit" class="button button-dark" type="submit">Enviar instrucción <span aria-hidden="true">↗</span></button>
+                </div>
+              </form>
+            </section>
+          </section>
 
           <section id="team-section" class="panel-section">
             <div class="section-title-row">

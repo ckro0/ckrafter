@@ -29,6 +29,7 @@ Puedes usar una **app web local** con progreso visible y un mapa interactivo, o 
 - **Hace visible el progreso:** la app web muestra las etapas y un globo ASCII animado mientras el equipo trabaja.
 - **Permite explorar el resultado:** abre los documentos desde la app y selecciona una etapa para preparar una revisión enfocada.
 - **Conserva el avance:** las sesiones se guardan localmente y pueden reanudarse desde la consola.
+- **Toma contexto de proyectos existentes:** indica la ruta de una carpeta para que Ckrafter lea el README, los manifiestos y la estructura, te explique qué entiende del proyecto y espere tus instrucciones en una conversación contextual. El análisis no modifica los archivos originales.
 - **Admite distintos stacks:** Java, Kotlin, C#, Go, Rust, Python, JavaScript/TypeScript y otras opciones según el proyecto.
 
 ## El recorrido
@@ -77,6 +78,8 @@ Los resultados se guardan como Markdown en `output/<id-de-sesion>/`. Incluyen pr
 
 La aplicación escucha solo en `127.0.0.1`; no está pensada para publicarse como servidor accesible desde Internet.
 
+Para trabajar sobre una carpeta existente, usa **Abrir un proyecto existente** en la pantalla de inicio e indica su ruta local. Ckrafter prepara una lectura inicial y luego queda esperando que elijas un siguiente paso o escribas una instrucción. El contenido enviado al proveedor incluye el README, manifiestos y estructura seleccionados; las instrucciones posteriores pueden incluir archivos de código relevantes. El análisis no edita los archivos originales.
+
 ### Instalación manual
 
 Desde la carpeta del repositorio, en PowerShell:
@@ -111,6 +114,8 @@ La disponibilidad, límites y posibles costos dependen del proveedor y de tu cue
 ## Consola y otras plataformas
 
 La consola sigue disponible y es la opción adecuada para Termux u otros entornos donde no se quiera usar la app web.
+
+En el menú interactivo, **Consultar un proyecto existente** realiza una lectura inicial y permite conversar con el contexto del proyecto.
 
 ```bash
 python main.py --req "Una API en Java para gestionar reservas de un hotel" --lang espanol
